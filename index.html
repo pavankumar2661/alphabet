@@ -1,101 +1,296 @@
-
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-<title>Color Tap Game</title>
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+<title>Animal Sound Game</title>
 <style>
-    body {
-        font-family: Arial, sans-serif;
-        text-align: center;
-        background: #f7f7f7;
-        margin: 0;
-        padding: 20px;
-    }
+  :root{
+    --bg:#fff8e7;
+    --ink:#2c2c2c;
+    --accent:#ff8a00;
+    --good:#2ecc71;
+    --bad:#ff4d4f;
+    --card:#ffffff;
+    --shadow:0 6px 24px rgba(0,0,0,0.08);
+  }
+  html,body{margin:0;height:100%;background:var(--bg);color:var(--ink);font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial}
+  .wrap{max-width:900px;margin:0 auto;padding:16px 18px 28px}
+  header{display:flex;align-items:center;gap:10px;justify-content:space-between;margin:4px 0 12px}
+  h1{font-size:clamp(22px,4.8vw,30px);margin:0;display:flex;align-items:center;gap:.5ch}
+  .mode-toggle{display:flex;gap:8px}
+  .btn{
+    border:none;border-radius:14px;padding:12px 16px;font-size:16px;font-weight:700;
+    background:#ffd54f;color:#4a2c00;box-shadow:var(--shadow);cursor:pointer
+  }
+  .btn.secondary{background:#e0e7ff;color:#1e2a78}
+  .btn.ghost{background:#fff;color:#333;border:2px solid #ddd}
+  .btn:active{transform:scale(.98)}
+  .pane{background:var(--card);border-radius:18px;box-shadow:var(--shadow);padding:14px;margin:12px 0}
+  .row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+  #prompt{
+    font-size:clamp(18px,4.4vw,24px);font-weight:800;margin:6px 0 8px;
+    display:flex;align-items:center;gap:.6ch;flex-wrap:wrap
+  }
+  #hint{font-size:clamp(18px,5vw,28px);font-weight:900;color:#000}
+  .grid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px;margin-top:12px}
+  @media (min-width:620px){.grid{grid-template-columns:repeat(4,1fr)}}
 
-    h1 {
-        font-size: 28px;
-        color: #333;
-    }
+  .card{
+    background:#fff;border-radius:20px;box-shadow:var(--shadow);padding:14px;
+    text-align:center;cursor:pointer;user-select:none;
+    transition:transform .06s ease, box-shadow .2s ease;
+    border:3px solid transparent;
+  }
+  .card:active{transform:scale(.98)}
+  .emoji{font-size:clamp(48px,12vw,70px);line-height:1}
+  .name{font-size:clamp(16px,4.5vw,20px);font-weight:800;margin-top:6px}
+  .sound{font-size:clamp(14px,4vw,18px);color:#5a5a5a}
+  .card.good{border-color:var(--good)}
+  .card.bad{border-color:var(--bad)}
 
-    #question {
-        font-size: 24px;
-        margin: 20px 0;
-        font-weight: bold;
-    }
+  .toolbar{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}
+  .status{font-size:clamp(16px,4.2vw,20px);font-weight:800;min-height:1.5em}
+  .status.good{color:var(--good)}
+  .status.bad{color:var(--bad)}
+  .divider{height:1px;background:#eee;margin:10px 0}
 
-    .colors {
-        display: flex;
-        justify-content: center;
-        gap: 20px;
-        margin-top: 20px;
-        flex-wrap: wrap;
-    }
+  /* Confetti */
+  .confetti{
+    position:fixed;inset:0;pointer-events:none;overflow:hidden;
+  }
+  .confetti span{
+    position:absolute;font-size:22px;animation:pop 1000ms ease-out forwards;
+  }
+  @keyframes pop{
+    0%{transform:translate(var(--x,0), var(--y,0)) scale(.4) rotate(0deg);opacity:0}
+    15%{opacity:1}
+    100%{transform:translate(var(--x2,0), var(--y2,-180px)) scale(1) rotate(var(--r,180deg));opacity:0}
+  }
 
-    .color-btn {
-        width: 120px;
-        height: 120px;
-        border-radius: 50%;
-        border: 4px solid #333;
-        cursor: pointer;
-    }
+  /* Mode tabs */
+  .tabs{display:flex;gap:8px}
+  .tab{flex:1;text-align:center;border-radius:12px;padding:10px 12px;font-weight:800;border:2px solid #ddd;background:#fff;cursor:pointer}
+  .tab.active{border-color:#8b5cf6;background:#ede9fe;color:#4c1d95}
 
-    #result {
-        margin-top: 25px;
-        font-size: 26px;
-        font-weight: bold;
-    }
+  /* Big tap targets on phones */
+  .btn, .card{min-height:64px}
 </style>
 </head>
 <body>
+<div class="wrap">
 
-<h1>🎨 Color Tap Game</h1>
+  <header>
+    <h1>🐾 Animal Sound Game</h1>
+    <div class="mode-toggle">
+      <button id="voiceToggle" class="btn secondary" aria-pressed="true">🔊 Voice: ON</button>
+    </div>
+  </header>
 
-<div id="question">Loading...</div>
+  <div class="pane">
+    <div class="tabs" role="tablist" aria-label="Game mode">
+      <button id="tabGuess" class="tab active" role="tab" aria-selected="true">🎯 Guess the Sound</button>
+      <button id="tabFree"  class="tab" role="tab" aria-selected="false">🎹 Free Play</button>
+    </div>
+    <div class="divider"></div>
 
-<div class="colors">
-    <div class="color-btn" id="red" style="background:red"></div>
-    <div class="color-btn" id="blue" style="background:blue"></div>
-    <div class="color-btn" id="green" style="background:green"></div>
-    <div class="color-btn" id="yellow" style="background:yellow"></div>
+    <!-- Guess Mode -->
+    <section id="guessMode" aria-labelledby="tabGuess">
+      <div id="prompt">👂 Which animal says <span id="hint">...</span> ?</div>
+      <div class="toolbar">
+        <button id="playSound" class="btn">🔈 Play Sound</button>
+        <button id="nextRound" class="btn ghost">➡️ New Round</button>
+      </div>
+      <div class="grid" id="guessGrid" aria-label="Choices"></div>
+      <div id="status" class="status" role="status" aria-live="polite"></div>
+    </section>
+
+    <!-- Free Play Mode -->
+    <section id="freeMode" hidden aria-labelledby="tabFree">
+      <div id="promptFree" style="font-weight:800">Tap an animal to hear its sound & name</div>
+      <div class="grid" id="freeGrid" aria-label="All animals"></div>
+    </section>
+  </div>
+
+  <footer class="row" style="justify-content:center;color:#666;margin-top:10px">
+    <small>Tip: Works offline. If voice is quiet on iPhone/Android, raise ringer volume.</small>
+  </footer>
 </div>
 
-<div id="result"></div>
+<div class="confetti" id="confetti" aria-hidden="true"></div>
 
 <script>
-    const colors = ["red", "blue", "green", "yellow"];
+  // --- Data ---
+  const ANIMALS = [
+    { name:"Dog",      emoji:"🐶", sound:"Woof!" },
+    { name:"Cat",      emoji:"🐱", sound:"Meow!" },
+    { name:"Cow",      emoji:"🐮", sound:"Moo!" },
+    { name:"Sheep",    emoji:"🐑", sound:"Baa!" },
+    { name:"Duck",     emoji:"🦆", sound:"Quack!" },
+    { name:"Horse",    emoji:"🐴", sound:"Neigh!" },
+    { name:"Chicken",  emoji:"🐔", sound:"Cluck!" },
+    { name:"Elephant", emoji:"🐘", sound:"Trumpet!" },
+    { name:"Lion",     emoji:"🦁", sound:"Roar!" },
+    { name:"Frog",     emoji:"🐸", sound:"Ribbit!" }
+  ];
 
-    function newRound() {
-        const pick = colors[Math.floor(Math.random() * colors.length)];
-        document.getElementById("question").innerText =
-            "Tap the " + pick.toUpperCase() + " circle!";
-        speak("Tap the " + pick + " circle");
-        return pick;
+  // --- Helpers ---
+  const $ = sel => document.querySelector(sel);
+  const $$ = sel => Array.from(document.querySelectorAll(sel));
+
+  let voiceOn = true;
+  function speak(text){
+    if(!voiceOn) return;
+    try{
+      const u = new SpeechSynthesisUtterance(text);
+      u.rate = 0.95; // slightly slower for kids
+      u.pitch = 1.0;
+      speechSynthesis.cancel(); // stop any overlap
+      speechSynthesis.speak(u);
+    }catch(e){ /* ignore */ }
+  }
+  function vibrate(pattern=[40]){ if(navigator.vibrate) navigator.vibrate(pattern); }
+  function shuffle(arr){ return arr.map(v=>[Math.random(),v]).sort((a,b)=>a[0]-b[0]).map(p=>p[1]); }
+  function sample(arr, n){ return shuffle([...arr]).slice(0,n); }
+
+  function makeCard(animal, onTap){
+    const card = document.createElement('button');
+    card.className = 'card';
+    card.setAttribute('aria-label', `${animal.name}. Sound ${animal.sound}`);
+    card.innerHTML = `
+      <div class="emoji">${animal.emoji}</div>
+      <div class="name">${animal.name}</div>
+      <div class="sound">${animal.sound}</div>
+    `;
+    card.addEventListener('click', ()=> onTap && onTap(animal, card));
+    return card;
+  }
+
+  // --- Confetti (emoji burst) ---
+  function confettiBurst(){
+    const box = $('#confetti');
+    for(let i=0;i<24;i++){
+      const span = document.createElement('span');
+      span.textContent = (i%3===0?'🎉':(i%3===1?'⭐':'✨'));
+      const x = Math.random()*window.innerWidth;
+      const y = window.innerHeight - 40;
+      const dx = (Math.random()*2-1) * 140;
+      const dy = - (120 + Math.random()*120);
+      const rot = (Math.random()*2-1) * 540;
+      span.style.left = x+'px';
+      span.style.top  = y+'px';
+      span.style.setProperty('--x','0px');
+      span.style.setProperty('--y','0px');
+      span.style.setProperty('--x2', dx+'px');
+      span.style.setProperty('--y2', dy+'px');
+      span.style.setProperty('--r', rot+'deg');
+      box.appendChild(span);
+      setTimeout(()=> span.remove(), 1000);
     }
+  }
 
-    let answer = newRound();
+  // --- Guess Mode Logic ---
+  let correct = null;
 
-    document.querySelectorAll(".color-btn").forEach(btn => {
-        btn.addEventListener("click", () => {
-            if (btn.id === answer) {
-                document.getElementById("result").innerText = "✔ Correct!";
-                speak("Good job!");
-            } else {
-                document.getElementById("result").innerText = "❌ Try again!";
-                speak("Try again");
-            }
-            setTimeout(() => {
-                document.getElementById("result").innerText = "";
-                answer = newRound();
-            }, 1200);
-        });
+  function renderGuessRound(){
+    $('#status').textContent = '';
+    $$('#guessGrid .card').forEach(n=>n.remove());
+
+    const choices = sample(ANIMALS, 4);
+    correct = sample(choices,1)[0];
+
+    $('#hint').textContent = correct.sound;
+    // Build cards
+    const grid = $('#guessGrid');
+    choices.forEach(an => {
+      const card = makeCard(an, (picked, el)=>{
+        if(picked.name === correct.name){
+          el.classList.add('good');
+          $('#status').textContent = `✅ Correct! It’s the ${picked.name}.`;
+          $('#status').className = 'status good';
+          speak(`Yay! ${picked.sound} ${picked.sound} It is the ${picked.name}!`);
+          vibrate([40,60,80]);
+          confettiBurst();
+          setTimeout(renderGuessRound, 1200);
+        }else{
+          el.classList.add('bad');
+          $('#status').textContent = `❌ Try again!`;
+          $('#status').className = 'status bad';
+          speak('Try again!');
+          vibrate([60]);
+          setTimeout(()=> el.classList.remove('bad'), 600);
+        }
+      });
+      grid.appendChild(card);
     });
+  }
 
-    function speak(text) {
-        let msg = new SpeechSynthesisUtterance(text);
-        speechSynthesis.speak(msg);
+  // --- Free Play ---
+  function renderFreePlay(){
+    const grid = $('#freeGrid');
+    grid.innerHTML = '';
+    ANIMALS.forEach(an=>{
+      const card = makeCard(an, (picked)=>{
+        speak(`${picked.sound} ${picked.sound} ${picked.name}`);
+        vibrate([30]);
+      });
+      grid.appendChild(card);
+    });
+  }
+
+  // --- Controls & Tabs ---
+  $('#playSound').addEventListener('click', ()=>{
+    if(!correct){ return; }
+    // Repeat the onomatopoeia a couple of times for clarity
+    speak(`${correct.sound} ${correct.sound}! Which animal says ${correct.sound}?`);
+    vibrate([20,40,20]);
+  });
+
+  $('#nextRound').addEventListener('click', ()=>{
+    speechSynthesis.cancel();
+    renderGuessRound();
+  });
+
+  const tabGuess = $('#tabGuess');
+  const tabFree  = $('#tabFree');
+  const guessMode = $('#guessMode');
+  const freeMode  = $('#freeMode');
+
+  function setTab(mode){
+    const isGuess = mode === 'guess';
+    tabGuess.classList.toggle('active', isGuess);
+    tabFree.classList.toggle('active', !isGuess);
+    tabGuess.setAttribute('aria-selected', isGuess);
+    tabFree.setAttribute('aria-selected', !isGuess);
+    guessMode.hidden = !isGuess;
+    freeMode.hidden = isGuess;
+    if(isGuess){
+      renderGuessRound();
+    }else{
+      renderFreePlay();
+      speak('Free play. Tap an animal to hear its sound.');
     }
-</script>
+  }
+  tabGuess.addEventListener('click', ()=> setTab('guess'));
+  tabFree.addEventListener('click',  ()=> setTab('free'));
 
+  // Voice toggle
+  const voiceBtn = $('#voiceToggle');
+  voiceBtn.addEventListener('click', ()=>{
+    voiceOn = !voiceOn;
+    voiceBtn.textContent = voiceOn ? '🔊 Voice: ON' : '🔇 Voice: OFF';
+    voiceBtn.setAttribute('aria-pressed', String(voiceOn));
+    if(voiceOn){ speak('Voice on'); }
+    else { speechSynthesis.cancel(); }
+  });
+
+  // First load
+  window.addEventListener('load', ()=>{
+    setTab('guess');
+    // Initial friendly prompt
+    setTimeout(()=> speak('Which animal says... Moo? Tap the right animal!'), 400);
+  });
+</script>
 </body>
 </html>
+``
