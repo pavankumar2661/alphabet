@@ -102,3 +102,401 @@
   }
   .row{ display:flex; gap:8px; flex-wrap:wrap; align-items:center }
   .info{ background:#fff7ed; border:1px solid #ffedd5; color:#7c2d12; padding:10px 12px; border-radius:12px; font-weight:800 }
+  .big-letter{
+    font-size: clamp(64px, 16vw, 120px); text-align:center; font-weight:1000; letter-spacing:2px;
+    margin:10px 0; color:#0f172a;
+  }
+  .hidden{ display:none !important }
+  .center{ text-align:center }
+  .checkbox{ transform: scale(1.2); }
+  .confetti{ position: fixed; inset: 0; pointer-events: none; }
+
+  /* Reduce motion for sensitive users */
+  @media (prefers-reduced-motion: reduce) {
+    .tile, .tile:active { transition: none; transform: none !important; }
+  }
+
+  /* Improve readability in landscape on phones */
+  @media (max-height:520px) and (orientation:landscape) {
+    .big-letter{ font-size: clamp(48px, 14vw, 96px); }
+    .tile{ min-height:72px; }
+  }
+</style>
+</head>
+<body>
+<div class="app" role="application" aria-label="Alphabet Play">
+  <header>
+    <div class="brand">
+      <span style="font-size:1.5rem">🔤</span>
+      Alphabet Play
+      <span class="badge">Age 3+</span>
+    </div>
+    <div class="controls">
+      <div class="seg" id="modeSeg" role="tablist" aria-label="Game mode">
+        <button class="active" data-mode="learn" aria-selected="true">Learn</button>
+        <button data-mode="find" aria-selected="false">Find</button>
+        <button data-mode="match" aria-selected="false">Match</button>
+      </div>
+      <button class="toggle" id="caseBtn" aria-pressed="false" title="Uppercase / Lowercase">Aa</button>
+      <button class="toggle" id="soundBtn" aria-pressed="true" title="Toggle voice">🔊 Sound</button>
+      <button class="btn primary" id="shuffleBtn" title="New letters">New</button>
+    </div>
+  </header>
+
+  <main>
+    <!-- PLAY AREA -->
+    <section class="stage" id="stage">
+      <div class="prompt" id="prompt">Tap or click a letter to hear it! (Press keys 1–9 to pick)</div>
+      <div class="big-letter hidden" id="bigLetter">A</div>
+      <div class="grid" id="grid" aria-live="polite"></div>
+    </section>
+
+    <!-- SIDE AREA -->
+    <aside class="side">
+      <div class="info">Tips: Keep it playful. Praise taps/clicks. On desktop, use 1–9 keys.</div>
+      <div class="row">
+        <label><input id="showWords" class="checkbox" type="checkbox" checked /> Show example words</label>
+      </div>
+      <div class="row">
+        <label><input id="smallSet" class="checkbox" type="checkbox" /> Small set (A–F)</label>
+      </div>
+      <div class="row">
+        <label><input id="repeatName" class="checkbox" type="checkbox" checked /> Say letter name</label>
+      </div>
+      <div class="row">
+        <label><input id="sayPhonics" class="checkbox" type="checkbox" checked /> Say phonics (e.g., “/a/”)</label>
+      </div>
+      <div class="row">
+        <label><input id="celebrate" class="checkbox" type="checkbox" checked /> Confetti on success</label>
+      </div>
+      <div class="row center">
+        <div style="width:100%">
+          <div style="font-weight:900; margin-bottom:6px">Last letter</div>
+          <div id="lastWrap" class="big-letter" aria-live="polite">A</div>
+        </div>
+      </div>
+    </aside>
+  </main>
+</div>
+
+<canvas class="confetti" id="confetti"></canvas>
+
+<script>
+(function(){
+  // --- DATA ---
+  const ABC = "ABCDEFGHIJKLMNOPQRSTUVWXYZ".split("");
+  const EXAMPLES = {
+    A:"apple", B:"ball", C:"cat", D:"dog", E:"elephant", F:"fish",
+    G:"goat", H:"hat", I:"igloo", J:"juice", K:"kite", L:"lion",
+    M:"moon", N:"nest", O:"octopus", P:"pig", Q:"queen", R:"rainbow",
+    S:"sun", T:"turtle", U:"umbrella", V:"van", W:"whale", X:"xylophone",
+    Y:"yoyo", Z:"zebra"
+  };
+  const PHONICS = {
+    A:"/a/ as in apple",  B:"/b/ as in ball", C:"/k/ as in cat", D:"/d/ as in dog",
+    E:"/e/ as in elephant", F:"/f/ as in fish", G:"/g/ as in goat", H:"/h/ as in hat",
+    I:"/i/ as in igloo", J:"/j/ as in juice", K:"/k/ as in kite", L:"/l/ as in lion",
+    M:"/m/ as in moon", N:"/n/ as in nest", O:"/o/ as in octopus", P:"/p/ as in pig",
+    Q:"/kw/ as in queen", R:"/r/ as in rainbow", S:"/s/ as in sun", T:"/t/ as in turtle",
+    U:"/u/ as in umbrella", V:"/v/ as in van", W:"/w/ as in whale", X:"/ks/ as in bo-x",
+    Y:"/y/ as in yoyo", Z:"/z/ as in zebra"
+  };
+
+  // --- ELEMENTS ---
+  const grid = document.getElementById('grid');
+  const prompt = document.getElementById('prompt');
+  const lastWrap = document.getElementById('lastWrap');
+  const modeSeg = document.getElementById('modeSeg');
+  const caseBtn = document.getElementById('caseBtn');
+  const soundBtn = document.getElementById('soundBtn');
+  const shuffleBtn = document.getElementById('shuffleBtn');
+  const bigLetter = document.getElementById('bigLetter');
+
+  const showWords = document.getElementById('showWords');
+  const smallSet = document.getElementById('smallSet');
+  const repeatName = document.getElementById('repeatName');
+  const sayPhonics = document.getElementById('sayPhonics');
+  const celebrate = document.getElementById('celebrate');
+
+  // --- STATE ---
+  let state = {
+    mode: 'learn',     // 'learn' | 'find' | 'match'
+    lowercase: false,
+    sound: true,
+    target: null,      // target letter for 'find'
+    selectedTile: null // for 'match'
+  };
+
+  // --- UTIL ---
+  const pick = arr => arr[Math.floor(Math.random()*arr.length)];
+  const shuffle = arr => arr.sort(()=> Math.random() - 0.5);
+
+  function currentSet(){
+    const letters = smallSet.checked ? ABC.slice(0,6) : ABC.slice();
+    return shuffle(letters.slice());
+  }
+
+  function letterCase(ch){
+    return state.lowercase ? ch.toLowerCase() : ch;
+  }
+
+  // --- VOICE ---
+  function speak(text){
+    if(!state.sound || !('speechSynthesis' in window) || !text) return;
+    try{
+      const u = new SpeechSynthesisUtterance(text);
+      u.rate = 0.9; u.pitch = 1.1; u.lang = 'en-US';
+      // On iOS/Safari, must be after a user gesture
+      window.speechSynthesis.cancel();
+      window.speechSynthesis.speak(u);
+    }catch(e){}
+  }
+
+  function celebrateConfetti(){
+    if(!celebrate.checked) return;
+    const c = document.getElementById('confetti');
+    const ctx = c.getContext('2d', { willReadFrequently:false });
+    const W = c.width = window.innerWidth;
+    const H = c.height = window.innerHeight;
+    const N = 110, parts=[];
+    for(let i=0;i<N;i++){
+      parts.push({
+        x: Math.random()*W,
+        y: -20 - Math.random()*H*0.2,
+        r: 4+Math.random()*5,
+        c: ['#22c55e','#f97316','#a78bfa','#38bdf8','#f43f5e'][Math.floor(Math.random()*5)],
+        vy: 2+Math.random()*3,
+        vx: -2+Math.random()*4,
+        rot: Math.random()*Math.PI
+      });
+    }
+    let frames=0;
+    function anim(){
+      frames++;
+      ctx.clearRect(0,0,W,H);
+      parts.forEach(p=>{
+        p.x += p.vx; p.y += p.vy; p.rot += 0.08;
+        ctx.save();
+        ctx.translate(p.x, p.y);
+        ctx.rotate(p.rot);
+        ctx.fillStyle=p.c;
+        ctx.fillRect(-p.r, -p.r, p.r*2, p.r*2);
+        ctx.restore();
+        if(p.y>H+20) { p.y = -20; p.x = Math.random()*W; }
+      });
+      if(frames<110) requestAnimationFrame(anim);
+      else ctx.clearRect(0,0,W,H);
+    }
+    anim();
+  }
+
+  // --- RENDERERS ---
+  function renderLearn(){
+    prompt.textContent = "Tap or click a letter to hear it!";
+    bigLetter.classList.add('hidden');
+    grid.innerHTML = '';
+    const letters = currentSet().slice(0,12); // compact grid for phones
+    letters.forEach((L, idx)=>{
+      const tile = makeTile(L, true);
+      tile.setAttribute('data-index', idx+1);
+      tile.addEventListener('click', ()=> {
+        showLast(L);
+        sayLetter(L);
+        tileBump(tile);
+      }, {passive:true});
+      grid.appendChild(tile);
+    });
+  }
+
+  function renderFind(){
+    grid.innerHTML = '';
+    const letters = currentSet().slice(0,9);
+    state.target = pick(letters);
+    prompt.textContent = `Find: ${letterCase(state.target)}`;
+    bigLetter.classList.remove('hidden');
+    bigLetter.textContent = letterCase(state.target);
+    sayFind(state.target);
+    letters.forEach((L, idx)=>{
+      const tile = makeTile(L, showWords.checked);
+      tile.setAttribute('data-index', idx+1);
+      tile.addEventListener('click', ()=>{
+        if(L===state.target){
+          tile.classList.add('good');
+          sayYay(L);
+          showLast(L);
+          celebrateConfetti();
+          setTimeout(renderFind, 850);
+        } else {
+          tile.classList.add('bad');
+          sayTryAgain();
+          setTimeout(()=> tile.classList.remove('bad'), 450);
+        }
+      }, {passive:true});
+      grid.appendChild(tile);
+    });
+  }
+
+  function renderMatch(){
+    grid.innerHTML = '';
+    bigLetter.classList.add('hidden');
+    prompt.textContent = "Match uppercase to lowercase!";
+    const letters = currentSet().slice(0,6);
+    const ups = letters.map(L=>({type:'up', L}));
+    const lows = letters.map(L=>({type:'low', L}));
+    const all = shuffle(ups.concat(lows));
+    state.selectedTile = null;
+
+    all.forEach((item, idx)=>{
+      const ch = item.type==='up' ? item.L : item.L.toLowerCase();
+      const tile = document.createElement('button');
+      tile.className = 'tile';
+      tile.setAttribute('data-type', item.type);
+      tile.setAttribute('data-letter', item.L);
+      tile.setAttribute('data-index', idx+1);
+      tile.innerHTML = `<div class="char">${ch}</div>`;
+      tile.addEventListener('click', ()=> handleMatchClick(tile), {passive:true});
+      grid.appendChild(tile);
+    });
+  }
+
+  function handleMatchClick(tile){
+    if(tile.classList.contains('good')) return;
+    tileBump(tile);
+    if(!state.selectedTile){
+      state.selectedTile = tile;
+      tile.style.outline = '4px solid var(--accent)';
+      return;
+    }
+    const a = state.selectedTile, b = tile;
+    if(a===b){ a.style.outline=''; state.selectedTile=null; return; }
+    a.style.outline='';
+    if(a.getAttribute('data-letter')===b.getAttribute('data-letter') &&
+       a.getAttribute('data-type')!==b.getAttribute('data-type')){
+      a.classList.add('good'); b.classList.add('good');
+      const L = a.getAttribute('data-letter');
+      sayYay(L);
+      showLast(L);
+      const remaining = Array.from(grid.children).some(x=> !x.classList.contains('good'));
+      if(!remaining){
+        celebrateConfetti();
+        setTimeout(renderMatch, 850);
+      }
+    } else {
+      a.classList.add('bad'); b.classList.add('bad');
+      sayTryAgain();
+      setTimeout(()=>{ a.classList.remove('bad'); b.classList.remove('bad'); }, 450);
+    }
+    state.selectedTile = null;
+  }
+
+  function makeTile(L, withWord){
+    const tile = document.createElement('button');
+    tile.className = 'tile';
+    tile.setAttribute('aria-label', `Letter ${letterCase(L)}`);
+    const ch = letterCase(L);
+    tile.innerHTML = `
+      <div class="char">${ch}</div>
+      ${withWord ? `<div class="word">${EXAMPLES[L]}</div>` : ``}
+    `;
+    return tile;
+  }
+
+  function tileBump(tile){
+    tile.style.transform = 'scale(1.04)';
+    tile.style.boxShadow = '0 6px 20px rgba(0,0,0,.10)';
+    setTimeout(()=>{ tile.style.transform=''; tile.style.boxShadow=''; }, 120);
+  }
+
+  function showLast(L){
+    lastWrap.textContent = letterCase(L);
+  }
+
+  // --- SPEAK HELPERS ---
+  function sayLetter(L){
+    const name = state.lowercase ? L.toLowerCase() : L;
+    const pieces = [];
+    if(repeatName.checked) pieces.push(name);
+    if(sayPhonics.checked && PHONICS[L]) pieces.push(PHONICS[L]);
+    if(showWords.checked && EXAMPLES[L]) pieces.push(`${name} as in ${EXAMPLES[L]}`);
+    speak(pieces.join('. '));
+  }
+  function sayFind(L){
+    const n = state.lowercase ? L.toLowerCase() : L;
+    speak(`Can you find ${n}?`);
+  }
+  function sayYay(L){
+    const n = state.lowercase ? L.toLowerCase() : L;
+    speak(`Great job! ${n}!`);
+  }
+  function sayTryAgain(){
+    speak(`Try again`);
+  }
+
+  // --- MODE SWITCH ---
+  function setMode(m){
+    state.mode = m;
+    Array.from(modeSeg.querySelectorAll('button')).forEach(b=>{
+      b.classList.toggle('active', b.dataset.mode===m);
+      b.setAttribute('aria-selected', b.dataset.mode===m ? 'true':'false');
+    });
+    if(m==='learn') renderLearn();
+    if(m==='find')  renderFind();
+    if(m==='match') renderMatch();
+    // Move focus to grid for keyboard nav on desktop
+    setTimeout(()=> {
+      const first = grid.querySelector('.tile');
+      if(first) first.focus({preventScroll:true});
+    }, 0);
+  }
+
+  // --- EVENTS ---
+  modeSeg.addEventListener('click', (e)=>{
+    if(e.target.tagName==='BUTTON'){ setMode(e.target.dataset.mode); }
+  });
+
+  caseBtn.addEventListener('click', ()=>{
+    state.lowercase = !state.lowercase;
+    caseBtn.setAttribute('aria-pressed', String(state.lowercase));
+    caseBtn.textContent = state.lowercase ? 'aa' : 'Aa';
+    setMode(state.mode);
+  });
+
+  soundBtn.addEventListener('click', ()=>{
+    state.sound = !state.sound;
+    soundBtn.setAttribute('aria-pressed', String(state.sound));
+    soundBtn.textContent = state.sound ? '🔊 Sound' : '🔈 Muted';
+  });
+
+  shuffleBtn.addEventListener('click', ()=> setMode(state.mode));
+
+  [showWords, smallSet, repeatName, sayPhonics, celebrate].forEach(el=>{
+    el.addEventListener('change', ()=> setMode(state.mode));
+  });
+
+  // Keyboard support (desktop): numbers 1–9 to pick tiles; Enter to reshuffle
+  document.addEventListener('keydown', (e)=>{
+    if(e.key==='Enter'){ setMode(state.mode); return; }
+    if(/^[1-9]$/.test(e.key)){
+      const idx = parseInt(e.key,10);
+      const tile = grid.querySelector(`.tile[data-index="${idx}"]`) || grid.children[idx-1];
+      if(tile) tile.click();
+    }
+  }, {passive:true});
+
+  // Start
+  setMode('learn');
+
+  // iOS speechSynthesis wake-up (first user gesture enables sound)
+  const wake = ()=>{};
+  document.body.addEventListener('touchstart', wake, {once:true, passive:true});
+  document.body.addEventListener('pointerdown', wake, {once:true, passive:true});
+
+  // Resize confetti canvas when viewport changes (mobile rotation)
+  window.addEventListener('resize', ()=>{
+    const c = document.getElementById('confetti');
+    c.width = window.innerWidth; c.height = window.innerHeight;
+  }, {passive:true});
+})();
+</script>
+</body>
+</html>
