@@ -1,502 +1,101 @@
+
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-<meta charset="utf-8" />
-<meta name="viewport"
-      content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover" />
-<title>Alphabet Play – Mobile & Desktop</title>
+<title>Color Tap Game</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <style>
-  :root{
-    --bg: #0ea5e9;        /* sky-500 */
-    --card:#ffffff;
-    --ink:#0f172a;        /* slate-900 */
-    --soft:#e2e8f0;       /* slate-200 */
-    --ok:#22c55e;         /* green-500 */
-    --warn:#f97316;       /* orange-500 */
-    --accent:#a78bfa;     /* violet-400 */
-    --danger:#ef4444;     /* red-500 */
-    --muted:#475569;
-    --focus:#111827;
-  }
-  *{box-sizing:border-box}
-  html,body{height:100%}
-  body{
-    margin:0; padding:16px;
-    font-family: ui-rounded, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-    -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale;
-    background: radial-gradient(1200px 600px at 20% -10%, #38bdf8 0%, #0ea5e9 50%, #0284c7 100%);
-    color:var(--ink);
-    display:flex; align-items:center; justify-content:center;
-    touch-action: manipulation; /* prevents double-tap zoom */
-  }
-  .app{
-    width:min(980px, 100%);
-    background: var(--card);
-    border-radius: 18px;
-    box-shadow: 0 18px 50px rgba(0,0,0,.25);
-    overflow:hidden;
-  }
-  header{
-    display:flex; gap:12px; align-items:center; justify-content:space-between;
-    padding:14px 16px; background:linear-gradient(180deg, #ffffff, #f8fafc);
-    border-bottom:1px solid var(--soft);
-  }
-  .brand{ display:flex; align-items:center; gap:10px; font-weight:900; font-size:1.1rem }
-  .badge{ background:#dcfce7; color:#065f46; font-weight:800; padding:4px 10px; border-radius:999px; font-size:.8rem }
-  .controls{ display:flex; flex-wrap:wrap; gap:8px; align-items:center; justify-content:flex-end }
-  .seg{ display:flex; gap:6px; background:#f1f5f9; padding:6px; border-radius:12px; }
-  .seg button{
-    border:none; background:transparent; padding:10px 12px; border-radius:10px; font-weight:800; color:#334155;
-  }
-  .seg button.active{ background:#e2e8f0; color:#0f172a; outline:2px solid #cbd5e1 }
-  .toggle, .select, .btn{
-    background:#f1f5f9; border:1px solid #e2e8f0; color:#0f172a; border-radius:12px; padding:10px 12px; font-weight:800;
-  }
-  .btn.primary{ background:#22c55e; color:#052e16; border:none }
-  .btn:focus-visible, .toggle:focus-visible, .seg button:focus-visible{
-    outline:3px solid var(--focus); outline-offset:2px;
-  }
+    body {
+        font-family: Arial, sans-serif;
+        text-align: center;
+        background: #f7f7f7;
+        margin: 0;
+        padding: 20px;
+    }
 
-  main{ padding:16px; display:grid; grid-template-columns: 1fr 340px; gap:14px }
-  @media (max-width:900px){
-    main{ grid-template-columns:1fr }
-  }
-  .stage{
-    background:#ffffff; border:1px solid var(--soft); border-radius:16px; padding:14px; min-height:360px;
-  }
-  .prompt{
-    background:#f5f3ff; border:1px solid #e9d5ff; color:#4c1d95; border-radius:12px;
-    padding:12px; font-weight:900; text-align:center; font-size:clamp(18px, 4vw, 26px);
-  }
-  .grid{
-    margin-top:12px;
-    display:grid; gap:10px;
-    grid-template-columns: repeat(4, 1fr);
-  }
-  @media (max-width:460px){
-    .grid{ grid-template-columns: repeat(3, 1fr);}
-  }
-  .tile{
-    user-select:none;
-    background:linear-gradient(180deg,#ffffff,#f8fafc);
-    border:2px solid #e2e8f0;
-    border-radius:16px;
-    padding:16px 8px;
-    display:flex; flex-direction:column; align-items:center; justify-content:center; gap:4px;
-    min-height:84px;
-    touch-action: manipulation;
-    transition: transform .08s ease, box-shadow .08s ease, outline-color .08s ease;
-    font-size: 16px; /* ensure good tap target on iOS */
-  }
-  .tile:active{ transform:scale(.98) }
-  .tile:focus-visible{ outline:4px solid var(--accent) }
-  .char{
-    font-size:clamp(36px, 9vw, 60px);
-    font-weight:1000; letter-spacing:1px;
-  }
-  .word{ font-size:clamp(12px, 3.6vw, 16px); color:var(--muted); font-weight:800 }
-  .tile.good{ outline:4px solid var(--ok); box-shadow: 0 0 0 4px #dcfce7 inset; }
-  .tile.bad{ outline:4px solid var(--danger); box-shadow: 0 0 0 4px #fee2e2 inset; }
-  .side{
-    background:#ffffff; border:1px solid var(--soft); border-radius:16px; padding:14px; display:flex; flex-direction:column; gap:12px;
-  }
-  .row{ display:flex; gap:8px; flex-wrap:wrap; align-items:center }
-  .info{ background:#fff7ed; border:1px solid #ffedd5; color:#7c2d12; padding:10px 12px; border-radius:12px; font-weight:800 }
-  .big-letter{
-    font-size: clamp(64px, 16vw, 120px); text-align:center; font-weight:1000; letter-spacing:2px;
-    margin:10px 0; color:#0f172a;
-  }
-  .hidden{ display:none !important }
-  .center{ text-align:center }
-  .checkbox{ transform: scale(1.2); }
-  .confetti{ position: fixed; inset: 0; pointer-events: none; }
+    h1 {
+        font-size: 28px;
+        color: #333;
+    }
 
-  /* Reduce motion for sensitive users */
-  @media (prefers-reduced-motion: reduce) {
-    .tile, .tile:active { transition: none; transform: none !important; }
-  }
+    #question {
+        font-size: 24px;
+        margin: 20px 0;
+        font-weight: bold;
+    }
 
-  /* Improve readability in landscape on phones */
-  @media (max-height:520px) and (orientation:landscape) {
-    .big-letter{ font-size: clamp(48px, 14vw, 96px); }
-    .tile{ min-height:72px; }
-  }
+    .colors {
+        display: flex;
+        justify-content: center;
+        gap: 20px;
+        margin-top: 20px;
+        flex-wrap: wrap;
+    }
+
+    .color-btn {
+        width: 120px;
+        height: 120px;
+        border-radius: 50%;
+        border: 4px solid #333;
+        cursor: pointer;
+    }
+
+    #result {
+        margin-top: 25px;
+        font-size: 26px;
+        font-weight: bold;
+    }
 </style>
 </head>
 <body>
-<div class="app" role="application" aria-label="Alphabet Play">
-  <header>
-    <div class="brand">
-      <span style="font-size:1.5rem">🔤</span>
-      Alphabet Play
-      <span class="badge">Age 3+</span>
-    </div>
-    <div class="controls">
-      <div class="seg" id="modeSeg" role="tablist" aria-label="Game mode">
-        <button class="active" data-mode="learn" aria-selected="true">Learn</button>
-        <button data-mode="find" aria-selected="false">Find</button>
-        <button data-mode="match" aria-selected="false">Match</button>
-      </div>
-      <button class="toggle" id="caseBtn" aria-pressed="false" title="Uppercase / Lowercase">Aa</button>
-      <button class="toggle" id="soundBtn" aria-pressed="true" title="Toggle voice">🔊 Sound</button>
-      <button class="btn primary" id="shuffleBtn" title="New letters">New</button>
-    </div>
-  </header>
 
-  <main>
-    <!-- PLAY AREA -->
-    <section class="stage" id="stage">
-      <div class="prompt" id="prompt">Tap or click a letter to hear it! (Press keys 1–9 to pick)</div>
-      <div class="big-letter hidden" id="bigLetter">A</div>
-      <div class="grid" id="grid" aria-live="polite"></div>
-    </section>
+<h1>🎨 Color Tap Game</h1>
 
-    <!-- SIDE AREA -->
-    <aside class="side">
-      <div class="info">Tips: Keep it playful. Praise taps/clicks. On desktop, use 1–9 keys.</div>
-      <div class="row">
-        <label><input id="showWords" class="checkbox" type="checkbox" checked /> Show example words</label>
-      </div>
-      <div class="row">
-        <label><input id="smallSet" class="checkbox" type="checkbox" /> Small set (A–F)</label>
-      </div>
-      <div class="row">
-        <label><input id="repeatName" class="checkbox" type="checkbox" checked /> Say letter name</label>
-      </div>
-      <div class="row">
-        <label><input id="sayPhonics" class="checkbox" type="checkbox" checked /> Say phonics (e.g., “/a/”)</label>
-      </div>
-      <div class="row">
-        <label><input id="celebrate" class="checkbox" type="checkbox" checked /> Confetti on success</label>
-      </div>
-      <div class="row center">
-        <div style="width:100%">
-          <div style="font-weight:900; margin-bottom:6px">Last letter</div>
-          <div id="lastWrap" class="big-letter" aria-live="polite">A</div>
-        </div>
-      </div>
-    </aside>
-  </main>
+<div id="question">Loading...</div>
+
+<div class="colors">
+    <div class="color-btn" id="red" style="background:red"></div>
+    <div class="color-btn" id="blue" style="background:blue"></div>
+    <div class="color-btn" id="green" style="background:green"></div>
+    <div class="color-btn" id="yellow" style="background:yellow"></div>
 </div>
 
-<canvas class="confetti" id="confetti"></canvas>
+<div id="result"></div>
 
 <script>
-(function(){
-  // --- DATA ---
-  const ABC = "ABCDEFGHIJKLMNOPQRSTUVWXYZ".split("");
-  const EXAMPLES = {
-    A:"apple", B:"ball", C:"cat", D:"dog", E:"elephant", F:"fish",
-    G:"goat", H:"hat", I:"igloo", J:"juice", K:"kite", L:"lion",
-    M:"moon", N:"nest", O:"octopus", P:"pig", Q:"queen", R:"rainbow",
-    S:"sun", T:"turtle", U:"umbrella", V:"van", W:"whale", X:"xylophone",
-    Y:"yoyo", Z:"zebra"
-  };
-  const PHONICS = {
-    A:"/a/ as in apple",  B:"/b/ as in ball", C:"/k/ as in cat", D:"/d/ as in dog",
-    E:"/e/ as in elephant", F:"/f/ as in fish", G:"/g/ as in goat", H:"/h/ as in hat",
-    I:"/i/ as in igloo", J:"/j/ as in juice", K:"/k/ as in kite", L:"/l/ as in lion",
-    M:"/m/ as in moon", N:"/n/ as in nest", O:"/o/ as in octopus", P:"/p/ as in pig",
-    Q:"/kw/ as in queen", R:"/r/ as in rainbow", S:"/s/ as in sun", T:"/t/ as in turtle",
-    U:"/u/ as in umbrella", V:"/v/ as in van", W:"/w/ as in whale", X:"/ks/ as in bo-x",
-    Y:"/y/ as in yoyo", Z:"/z/ as in zebra"
-  };
+    const colors = ["red", "blue", "green", "yellow"];
 
-  // --- ELEMENTS ---
-  const grid = document.getElementById('grid');
-  const prompt = document.getElementById('prompt');
-  const lastWrap = document.getElementById('lastWrap');
-  const modeSeg = document.getElementById('modeSeg');
-  const caseBtn = document.getElementById('caseBtn');
-  const soundBtn = document.getElementById('soundBtn');
-  const shuffleBtn = document.getElementById('shuffleBtn');
-  const bigLetter = document.getElementById('bigLetter');
-
-  const showWords = document.getElementById('showWords');
-  const smallSet = document.getElementById('smallSet');
-  const repeatName = document.getElementById('repeatName');
-  const sayPhonics = document.getElementById('sayPhonics');
-  const celebrate = document.getElementById('celebrate');
-
-  // --- STATE ---
-  let state = {
-    mode: 'learn',     // 'learn' | 'find' | 'match'
-    lowercase: false,
-    sound: true,
-    target: null,      // target letter for 'find'
-    selectedTile: null // for 'match'
-  };
-
-  // --- UTIL ---
-  const pick = arr => arr[Math.floor(Math.random()*arr.length)];
-  const shuffle = arr => arr.sort(()=> Math.random() - 0.5);
-
-  function currentSet(){
-    const letters = smallSet.checked ? ABC.slice(0,6) : ABC.slice();
-    return shuffle(letters.slice());
-  }
-
-  function letterCase(ch){
-    return state.lowercase ? ch.toLowerCase() : ch;
-  }
-
-  // --- VOICE ---
-  function speak(text){
-    if(!state.sound || !('speechSynthesis' in window) || !text) return;
-    try{
-      const u = new SpeechSynthesisUtterance(text);
-      u.rate = 0.9; u.pitch = 1.1; u.lang = 'en-US';
-      // On iOS/Safari, must be after a user gesture
-      window.speechSynthesis.cancel();
-      window.speechSynthesis.speak(u);
-    }catch(e){}
-  }
-
-  function celebrateConfetti(){
-    if(!celebrate.checked) return;
-    const c = document.getElementById('confetti');
-    const ctx = c.getContext('2d', { willReadFrequently:false });
-    const W = c.width = window.innerWidth;
-    const H = c.height = window.innerHeight;
-    const N = 110, parts=[];
-    for(let i=0;i<N;i++){
-      parts.push({
-        x: Math.random()*W,
-        y: -20 - Math.random()*H*0.2,
-        r: 4+Math.random()*5,
-        c: ['#22c55e','#f97316','#a78bfa','#38bdf8','#f43f5e'][Math.floor(Math.random()*5)],
-        vy: 2+Math.random()*3,
-        vx: -2+Math.random()*4,
-        rot: Math.random()*Math.PI
-      });
+    function newRound() {
+        const pick = colors[Math.floor(Math.random() * colors.length)];
+        document.getElementById("question").innerText =
+            "Tap the " + pick.toUpperCase() + " circle!";
+        speak("Tap the " + pick + " circle");
+        return pick;
     }
-    let frames=0;
-    function anim(){
-      frames++;
-      ctx.clearRect(0,0,W,H);
-      parts.forEach(p=>{
-        p.x += p.vx; p.y += p.vy; p.rot += 0.08;
-        ctx.save();
-        ctx.translate(p.x, p.y);
-        ctx.rotate(p.rot);
-        ctx.fillStyle=p.c;
-        ctx.fillRect(-p.r, -p.r, p.r*2, p.r*2);
-        ctx.restore();
-        if(p.y>H+20) { p.y = -20; p.x = Math.random()*W; }
-      });
-      if(frames<110) requestAnimationFrame(anim);
-      else ctx.clearRect(0,0,W,H);
-    }
-    anim();
-  }
 
-  // --- RENDERERS ---
-  function renderLearn(){
-    prompt.textContent = "Tap or click a letter to hear it!";
-    bigLetter.classList.add('hidden');
-    grid.innerHTML = '';
-    const letters = currentSet().slice(0,12); // compact grid for phones
-    letters.forEach((L, idx)=>{
-      const tile = makeTile(L, true);
-      tile.setAttribute('data-index', idx+1);
-      tile.addEventListener('click', ()=> {
-        showLast(L);
-        sayLetter(L);
-        tileBump(tile);
-      }, {passive:true});
-      grid.appendChild(tile);
+    let answer = newRound();
+
+    document.querySelectorAll(".color-btn").forEach(btn => {
+        btn.addEventListener("click", () => {
+            if (btn.id === answer) {
+                document.getElementById("result").innerText = "✔ Correct!";
+                speak("Good job!");
+            } else {
+                document.getElementById("result").innerText = "❌ Try again!";
+                speak("Try again");
+            }
+            setTimeout(() => {
+                document.getElementById("result").innerText = "";
+                answer = newRound();
+            }, 1200);
+        });
     });
-  }
 
-  function renderFind(){
-    grid.innerHTML = '';
-    const letters = currentSet().slice(0,9);
-    state.target = pick(letters);
-    prompt.textContent = `Find: ${letterCase(state.target)}`;
-    bigLetter.classList.remove('hidden');
-    bigLetter.textContent = letterCase(state.target);
-    sayFind(state.target);
-    letters.forEach((L, idx)=>{
-      const tile = makeTile(L, showWords.checked);
-      tile.setAttribute('data-index', idx+1);
-      tile.addEventListener('click', ()=>{
-        if(L===state.target){
-          tile.classList.add('good');
-          sayYay(L);
-          showLast(L);
-          celebrateConfetti();
-          setTimeout(renderFind, 850);
-        } else {
-          tile.classList.add('bad');
-          sayTryAgain();
-          setTimeout(()=> tile.classList.remove('bad'), 450);
-        }
-      }, {passive:true});
-      grid.appendChild(tile);
-    });
-  }
-
-  function renderMatch(){
-    grid.innerHTML = '';
-    bigLetter.classList.add('hidden');
-    prompt.textContent = "Match uppercase to lowercase!";
-    const letters = currentSet().slice(0,6);
-    const ups = letters.map(L=>({type:'up', L}));
-    const lows = letters.map(L=>({type:'low', L}));
-    const all = shuffle(ups.concat(lows));
-    state.selectedTile = null;
-
-    all.forEach((item, idx)=>{
-      const ch = item.type==='up' ? item.L : item.L.toLowerCase();
-      const tile = document.createElement('button');
-      tile.className = 'tile';
-      tile.setAttribute('data-type', item.type);
-      tile.setAttribute('data-letter', item.L);
-      tile.setAttribute('data-index', idx+1);
-      tile.innerHTML = `<div class="char">${ch}</div>`;
-      tile.addEventListener('click', ()=> handleMatchClick(tile), {passive:true});
-      grid.appendChild(tile);
-    });
-  }
-
-  function handleMatchClick(tile){
-    if(tile.classList.contains('good')) return;
-    tileBump(tile);
-    if(!state.selectedTile){
-      state.selectedTile = tile;
-      tile.style.outline = '4px solid var(--accent)';
-      return;
+    function speak(text) {
+        let msg = new SpeechSynthesisUtterance(text);
+        speechSynthesis.speak(msg);
     }
-    const a = state.selectedTile, b = tile;
-    if(a===b){ a.style.outline=''; state.selectedTile=null; return; }
-    a.style.outline='';
-    if(a.getAttribute('data-letter')===b.getAttribute('data-letter') &&
-       a.getAttribute('data-type')!==b.getAttribute('data-type')){
-      a.classList.add('good'); b.classList.add('good');
-      const L = a.getAttribute('data-letter');
-      sayYay(L);
-      showLast(L);
-      const remaining = Array.from(grid.children).some(x=> !x.classList.contains('good'));
-      if(!remaining){
-        celebrateConfetti();
-        setTimeout(renderMatch, 850);
-      }
-    } else {
-      a.classList.add('bad'); b.classList.add('bad');
-      sayTryAgain();
-      setTimeout(()=>{ a.classList.remove('bad'); b.classList.remove('bad'); }, 450);
-    }
-    state.selectedTile = null;
-  }
-
-  function makeTile(L, withWord){
-    const tile = document.createElement('button');
-    tile.className = 'tile';
-    tile.setAttribute('aria-label', `Letter ${letterCase(L)}`);
-    const ch = letterCase(L);
-    tile.innerHTML = `
-      <div class="char">${ch}</div>
-      ${withWord ? `<div class="word">${EXAMPLES[L]}</div>` : ``}
-    `;
-    return tile;
-  }
-
-  function tileBump(tile){
-    tile.style.transform = 'scale(1.04)';
-    tile.style.boxShadow = '0 6px 20px rgba(0,0,0,.10)';
-    setTimeout(()=>{ tile.style.transform=''; tile.style.boxShadow=''; }, 120);
-  }
-
-  function showLast(L){
-    lastWrap.textContent = letterCase(L);
-  }
-
-  // --- SPEAK HELPERS ---
-  function sayLetter(L){
-    const name = state.lowercase ? L.toLowerCase() : L;
-    const pieces = [];
-    if(repeatName.checked) pieces.push(name);
-    if(sayPhonics.checked && PHONICS[L]) pieces.push(PHONICS[L]);
-    if(showWords.checked && EXAMPLES[L]) pieces.push(`${name} as in ${EXAMPLES[L]}`);
-    speak(pieces.join('. '));
-  }
-  function sayFind(L){
-    const n = state.lowercase ? L.toLowerCase() : L;
-    speak(`Can you find ${n}?`);
-  }
-  function sayYay(L){
-    const n = state.lowercase ? L.toLowerCase() : L;
-    speak(`Great job! ${n}!`);
-  }
-  function sayTryAgain(){
-    speak(`Try again`);
-  }
-
-  // --- MODE SWITCH ---
-  function setMode(m){
-    state.mode = m;
-    Array.from(modeSeg.querySelectorAll('button')).forEach(b=>{
-      b.classList.toggle('active', b.dataset.mode===m);
-      b.setAttribute('aria-selected', b.dataset.mode===m ? 'true':'false');
-    });
-    if(m==='learn') renderLearn();
-    if(m==='find')  renderFind();
-    if(m==='match') renderMatch();
-    // Move focus to grid for keyboard nav on desktop
-    setTimeout(()=> {
-      const first = grid.querySelector('.tile');
-      if(first) first.focus({preventScroll:true});
-    }, 0);
-  }
-
-  // --- EVENTS ---
-  modeSeg.addEventListener('click', (e)=>{
-    if(e.target.tagName==='BUTTON'){ setMode(e.target.dataset.mode); }
-  });
-
-  caseBtn.addEventListener('click', ()=>{
-    state.lowercase = !state.lowercase;
-    caseBtn.setAttribute('aria-pressed', String(state.lowercase));
-    caseBtn.textContent = state.lowercase ? 'aa' : 'Aa';
-    setMode(state.mode);
-  });
-
-  soundBtn.addEventListener('click', ()=>{
-    state.sound = !state.sound;
-    soundBtn.setAttribute('aria-pressed', String(state.sound));
-    soundBtn.textContent = state.sound ? '🔊 Sound' : '🔈 Muted';
-  });
-
-  shuffleBtn.addEventListener('click', ()=> setMode(state.mode));
-
-  [showWords, smallSet, repeatName, sayPhonics, celebrate].forEach(el=>{
-    el.addEventListener('change', ()=> setMode(state.mode));
-  });
-
-  // Keyboard support (desktop): numbers 1–9 to pick tiles; Enter to reshuffle
-  document.addEventListener('keydown', (e)=>{
-    if(e.key==='Enter'){ setMode(state.mode); return; }
-    if(/^[1-9]$/.test(e.key)){
-      const idx = parseInt(e.key,10);
-      const tile = grid.querySelector(`.tile[data-index="${idx}"]`) || grid.children[idx-1];
-      if(tile) tile.click();
-    }
-  }, {passive:true});
-
-  // Start
-  setMode('learn');
-
-  // iOS speechSynthesis wake-up (first user gesture enables sound)
-  const wake = ()=>{};
-  document.body.addEventListener('touchstart', wake, {once:true, passive:true});
-  document.body.addEventListener('pointerdown', wake, {once:true, passive:true});
-
-  // Resize confetti canvas when viewport changes (mobile rotation)
-  window.addEventListener('resize', ()=>{
-    const c = document.getElementById('confetti');
-    c.width = window.innerWidth; c.height = window.innerHeight;
-  }, {passive:true});
-})();
 </script>
+
 </body>
 </html>
