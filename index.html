@@ -1,222 +1,267 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="utf-8" />
-<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
-<title>Animal Sound Game</title>
+<!DOCTYPE html><" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+<title>తెలుగు చిన్నపిల్లల ఆట</title>
 <style>
   :root{
-    --bg:#fff8e7;
-    --ink:#2c2c2c;
-    --accent:#ff8a00;
-    --good:#2ecc71;
-    --bad:#ff4d4f;
-    --card:#ffffff;
-    --shadow:0 6px 24px rgba(0,0,0,0.08);
+    --bg:#fffaf2; --ink:#262626; --card:#ffffff; --accent:#ffb703;
+    --good:#2ecc71; --bad:#ff4d4f; --shadow:0 8px 28px rgba(0,0,0,.08);
   }
-  html,body{margin:0;height:100%;background:var(--bg);color:var(--ink);font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial}
-  .wrap{max-width:900px;margin:0 auto;padding:16px 18px 28px}
-  header{display:flex;align-items:center;gap:10px;justify-content:space-between;margin:4px 0 12px}
-  h1{font-size:clamp(22px,4.8vw,30px);margin:0;display:flex;align-items:center;gap:.5ch}
-  .mode-toggle{display:flex;gap:8px}
+  html,body{margin:0;height:100%;background:var(--bg);color:var(--ink);
+    font-family:system-ui,-apple-system,Segoe UI,Roboto,"Noto Sans Telugu",Arial}
+  .wrap{max-width:900px;margin:0 auto;padding:16px 14px 32px}
+  header{display:flex;align-items:center;justify-content:space-between;gap:10px}
+  h1{margin:6px 0;font-size:clamp(22px,5vw,30px);display:flex;align-items:center;gap:.5ch}
   .btn{
-    border:none;border-radius:14px;padding:12px 16px;font-size:16px;font-weight:700;
-    background:#ffd54f;color:#4a2c00;box-shadow:var(--shadow);cursor:pointer
+    border:0;border-radius:14px;padding:12px 16px;font-size:16px;font-weight:800;
+    background:#ffe082;color:#4a2c00;box-shadow:var(--shadow);cursor:pointer
   }
+  .btn.ghost{background:#fff;border:2px solid #e6e6e6}
   .btn.secondary{background:#e0e7ff;color:#1e2a78}
-  .btn.ghost{background:#fff;color:#333;border:2px solid #ddd}
   .btn:active{transform:scale(.98)}
-  .pane{background:var(--card);border-radius:18px;box-shadow:var(--shadow);padding:14px;margin:12px 0}
-  .row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
-  #prompt{
-    font-size:clamp(18px,4.4vw,24px);font-weight:800;margin:6px 0 8px;
-    display:flex;align-items:center;gap:.6ch;flex-wrap:wrap
-  }
-  #hint{font-size:clamp(18px,5vw,28px);font-weight:900;color:#000}
-  .grid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px;margin-top:12px}
-  @media (min-width:620px){.grid{grid-template-columns:repeat(4,1fr)}}
-
-  .card{
-    background:#fff;border-radius:20px;box-shadow:var(--shadow);padding:14px;
-    text-align:center;cursor:pointer;user-select:none;
-    transition:transform .06s ease, box-shadow .2s ease;
-    border:3px solid transparent;
-  }
-  .card:active{transform:scale(.98)}
-  .emoji{font-size:clamp(48px,12vw,70px);line-height:1}
-  .name{font-size:clamp(16px,4.5vw,20px);font-weight:800;margin-top:6px}
-  .sound{font-size:clamp(14px,4vw,18px);color:#5a5a5a}
-  .card.good{border-color:var(--good)}
-  .card.bad{border-color:var(--bad)}
-
-  .toolbar{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}
-  .status{font-size:clamp(16px,4.2vw,20px);font-weight:800;min-height:1.5em}
-  .status.good{color:var(--good)}
-  .status.bad{color:var(--bad)}
-  .divider{height:1px;background:#eee;margin:10px 0}
-
-  /* Confetti */
-  .confetti{
-    position:fixed;inset:0;pointer-events:none;overflow:hidden;
-  }
-  .confetti span{
-    position:absolute;font-size:22px;animation:pop 1000ms ease-out forwards;
-  }
-  @keyframes pop{
-    0%{transform:translate(var(--x,0), var(--y,0)) scale(.4) rotate(0deg);opacity:0}
-    15%{opacity:1}
-    100%{transform:translate(var(--x2,0), var(--y2,-180px)) scale(1) rotate(var(--r,180deg));opacity:0}
-  }
-
-  /* Mode tabs */
+  .pane{background:var(--card);border-radius:18px;box-shadow:var(--shadow);padding:14px;margin-top:12px}
+  .row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
   .tabs{display:flex;gap:8px}
+  .tabs.tabs-cat{flex-wrap:wrap} /* allow category tabs to wrap on small screens */
   .tab{flex:1;text-align:center;border-radius:12px;padding:10px 12px;font-weight:800;border:2px solid #ddd;background:#fff;cursor:pointer}
   .tab.active{border-color:#8b5cf6;background:#ede9fe;color:#4c1d95}
-
-  /* Big tap targets on phones */
-  .btn, .card{min-height:64px}
+  .divider{height:1px;background:#eee;margin:10px 0}
+  #prompt{font-size:clamp(18px,4.8vw,24px);font-weight:900;margin:8px 0}
+  .grid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px;margin-top:12px}
+  @media(min-width:620px){.grid{grid-template-columns:repeat(4,1fr)}}
+  .card{
+    background:#fff;border-radius:20px;box-shadow:var(--shadow);padding:14px;text-align:center;
+    cursor:pointer;user-select:none;transition:transform .06s, border-color .2s; border:3px solid transparent
+  }
+  .card:active{transform:scale(.98)}
+  .emoji{font-size:clamp(46px,12vw,70px);line-height:1}
+  .name{font-size:clamp(18px,5vw,22px);font-weight:900;margin-top:6px}
+  .hint{font-size:clamp(13px,4vw,16px);color:#666}
+  .card.good{border-color:var(--good)}
+  .card.bad{border-color:var(--bad)}
+  .status{min-height:1.5em;font-weight:900;margin-top:8px}
+  .status.good{color:var(--good)} .status.bad{color:var(--bad)}
+  .confetti{position:fixed;inset:0;pointer-events:none;overflow:hidden}
+  .confetti span{position:absolute;font-size:22px;animation:pop 1000ms ease-out forwards}
+  @keyframes pop{
+    0%{transform:translate(0,0) scale(.4) rotate(0deg);opacity:0}
+    15%{opacity:1}
+    100%{transform:translate(var(--x), var(--y)) scale(1) rotate(var(--r));opacity:0}
+  }
+  .note{color:#666;font-size:13px;text-align:center;margin-top:10px}
+  .big{font-size:18px}
 </style>
 </head>
 <body>
 <div class="wrap">
-
   <header>
-    <h1>🐾 Animal Sound Game</h1>
-    <div class="mode-toggle">
-      <button id="voiceToggle" class="btn secondary" aria-pressed="true">🔊 Voice: ON</button>
+    <h1>🧒 తెలుగు చిన్నపిల్లల ఆట</h1>
+    <div class="row">
+      <button id="startAudio" class="btn secondary">🔊 సౌండ్ ప్రారంభించు</button>
+      <button id="voiceToggle" class="btn">🔊 వాయిస్ ON</button>
     </div>
   </header>
 
   <div class="pane">
-    <div class="tabs" role="tablist" aria-label="Game mode">
-      <button id="tabGuess" class="tab active" role="tab" aria-selected="true">🎯 Guess the Sound</button>
-      <button id="tabFree"  class="tab" role="tab" aria-selected="false">🎹 Free Play</button>
+    <!-- Mode Tabs -->
+    <div class="tabs" role="tablist" aria-label="Mode">
+      <button id="tabFree"  class="tab active" role="tab" aria-selected="true">🎹 ఆడుకో</button>
+      <button id="tabMatch" class="tab" role="tab" aria-selected="false">🎯 పెట్టి చూసే ఆట</button>
     </div>
     <div class="divider"></div>
 
-    <!-- Guess Mode -->
-    <section id="guessMode" aria-labelledby="tabGuess">
-      <div id="prompt">👂 Which animal says <span id="hint">...</span> ?</div>
-      <div class="toolbar">
-        <button id="playSound" class="btn">🔈 Play Sound</button>
-        <button id="nextRound" class="btn ghost">➡️ New Round</button>
-      </div>
-      <div class="grid" id="guessGrid" aria-label="Choices"></div>
-      <div id="status" class="status" role="status" aria-live="polite"></div>
-    </section>
+    <!-- Category Tabs -->
+    <div class="tabs tabs-cat" role="tablist" aria-label="Category">
+      <button id="catColors"  class="tab active">🎨 రంగులు</button>
+      <button id="catAnimals" class="tab">🐾 జంతువులు</button>
+      <button id="catFruits"  class="tab">🍎 పండ్లు</button>
+      <button id="catNumbers" class="tab">🔢 సంఖ్యలు</button>
+      <button id="catShapes"  class="tab">🟠 ఆకారాలు</button>
+    </div>
 
-    <!-- Free Play Mode -->
-    <section id="freeMode" hidden aria-labelledby="tabFree">
-      <div id="promptFree" style="font-weight:800">Tap an animal to hear its sound & name</div>
-      <div class="grid" id="freeGrid" aria-label="All animals"></div>
-    </section>
+    <div id="prompt" class="big">ట్యాప్ చేస్తే పదం వినిపిస్తుంది</div>
+    <div class="row">
+      <button id="repeatBtn" class="btn ghost">🔈 మళ్లీ వినిపించు</button>
+      <button id="nextBtn" class="btn ghost" hidden>➡️ మరొకటి</button>
+    </div>
+
+    <div id="grid" class="grid" aria-label="Choices"></div>
+    <div id="status" class="status" role="status" aria-live="polite"></div>
   </div>
 
-  <footer class="row" style="justify-content:center;color:#666;margin-top:10px">
-    <small>Tip: Works offline. If voice is quiet on iPhone/Android, raise ringer volume.</small>
-  </footer>
+  <div class="note">సూచన: iPhone/Android లో శబ్దం రావాలంటే ముందుగా “సౌండ్ ప్రారంభించు” బటన్‌ను ట్యాప్ చేయండి.</div>
 </div>
 
-<div class="confetti" id="confetti" aria-hidden="true"></div>
+<div id="confetti" class="confetti" aria-hidden="true"></div>
 
 <script>
-  // --- Data ---
+  // ====== Data (Telugu + simple transliteration) ======
+  const COLORS = [
+    { name:"ఎరుపు",   en:"Erupu",         emoji:"🔴" },
+    { name:"నీలం",    en:"Nīlam",         emoji:"🔵" },
+    { name:"ఆకుపచ్చ", en:"Ākupacca",      emoji:"🟢" },
+    { name:"పసుపు",   en:"Pasupu",        emoji:"🟡" },
+    { name:"నారింజ",  en:"Nārinja",       emoji:"🟠" },
+  ];
   const ANIMALS = [
-    { name:"Dog",      emoji:"🐶", sound:"Woof!" },
-    { name:"Cat",      emoji:"🐱", sound:"Meow!" },
-    { name:"Cow",      emoji:"🐮", sound:"Moo!" },
-    { name:"Sheep",    emoji:"🐑", sound:"Baa!" },
-    { name:"Duck",     emoji:"🦆", sound:"Quack!" },
-    { name:"Horse",    emoji:"🐴", sound:"Neigh!" },
-    { name:"Chicken",  emoji:"🐔", sound:"Cluck!" },
-    { name:"Elephant", emoji:"🐘", sound:"Trumpet!" },
-    { name:"Lion",     emoji:"🦁", sound:"Roar!" },
-    { name:"Frog",     emoji:"🐸", sound:"Ribbit!" }
+    { name:"కుక్క",   en:"Kukka (Dog)",     emoji:"🐶" },
+    { name:"పిల్లి",  en:"Pilli (Cat)",     emoji:"🐱" },
+    { name:"ఆవు",    en:"Āvu (Cow)",       emoji:"🐮" },
+    { name:"ఏనుగు",  en:"Ēnugu (Elephant)",emoji:"🐘" },
+    { name:"సింహం",  en:"Simham (Lion)",   emoji:"🦁" },
+  ];
+  const FRUITS = [
+    { name:"ఆపిల్",  en:"Āpil (Apple)",   emoji:"🍎" },
+    { name:"అరటి",   en:"Araṭi (Banana)", emoji:"🍌" },
+    { name:"ద్రాక్ష", en:"Drākṣa (Grapes)",emoji:"🍇" },
+    { name:"మామిడి", en:"Māmiḍi (Mango)", emoji:"🥭" },
+    { name:"జామ",    en:"Jāma (Guava)",   emoji:"🥝" }, // closest emoji
+  ];
+  // NEW: Numbers 1–5
+  const NUMBERS = [
+    { name:"ఒకటి",   en:"Okati (One)",    emoji:"1️⃣" },
+    { name:"రెండు",  en:"Rendu (Two)",    emoji:"2️⃣" },
+    { name:"మూడు",   en:"Mūḍu (Three)",   emoji:"3️⃣" },
+    { name:"నాలుగు", en:"Nālugu (Four)",  emoji:"4️⃣" },
+    { name:"ఐదు",    en:"Aidu (Five)",    emoji:"5️⃣" },
+  ];
+  // NEW: Shapes (simple words for toddlers)
+  const SHAPES = [
+    { name:"వృత్తం",    en:"Vṛttam (Circle)",   emoji:"⭕️" },
+    { name:"చదరం",     en:"Chadaram (Square)",  emoji:"🟥" },
+    { name:"ముక్కోణం", en:"Mukkōṇam (Triangle)",emoji:"🔺" },
+    { name:"నక్షత్రం",  en:"Nakṣatram (Star)",  emoji:"⭐️" },
+    { name:"హృదయం",    en:"Hr̥dayam (Heart)",  emoji:"❤️" },
   ];
 
-  // --- Helpers ---
-  const $ = sel => document.querySelector(sel);
-  const $$ = sel => Array.from(document.querySelectorAll(sel));
+  const CATS = {
+    colors:  {label:"🎨 రంగులు",   list: COLORS,  ask:"ఏది … రంగు?"},
+    animals: {label:"🐾 జంతువులు", list: ANIMALS, ask:"ఏది …?"},
+    fruits:  {label:"🍎 పండ్లు",   list: FRUITS,  ask:"ఏది … పండు?"},
+    numbers: {label:"🔢 సంఖ్యలు",  list: NUMBERS, ask:"ఏది … సంఖ్య?"},
+    shapes:  {label:"🟠 ఆకారాలు",  list: SHAPES,  ask:"ఏది … ఆకారం?"},
+  };
 
-  let voiceOn = true;
-  function speak(text){
-    if(!voiceOn) return;
+  // ====== Helpers ======
+  const $ = s => document.querySelector(s);
+  const $$ = s => Array.from(document.querySelectorAll(s));
+  function shuffle(a){return a.map(x=>[Math.random(),x]).sort((p,q)=>p[0]-q[0]).map(p=>p[1]);}
+  function sample(arr,n){return shuffle([...arr]).slice(0,n);}
+
+  let voiceOn = true, unlocked = false, teVoice = null;
+  let mode = 'free'; // 'free' | 'match'
+  let cat = 'colors';
+  let currentTarget = null; // for match mode
+
+  // Voice
+  function pickTeluguVoice(){
+    const voices = speechSynthesis.getVoices();
+    teVoice = voices.find(v => (v.lang||'').toLowerCase().startsWith('te'));
+    return teVoice;
+  }
+  speechSynthesis.onvoiceschanged = pickTeluguVoice;
+
+  function speak(textTe, fallbackEn){
+    if(!voiceOn || !unlocked) return;
     try{
-      const u = new SpeechSynthesisUtterance(text);
-      u.rate = 0.95; // slightly slower for kids
-      u.pitch = 1.0;
-      speechSynthesis.cancel(); // stop any overlap
+      const u = new SpeechSynthesisUtterance(textTe);
+      u.lang = teVoice ? teVoice.lang : 'te-IN';
+      if(teVoice) u.voice = teVoice;
+      u.rate = 0.9; u.pitch = 1.0;
+      if(!teVoice && fallbackEn){ u.text = fallbackEn; u.lang = 'en-US'; }
+      speechSynthesis.cancel();
       speechSynthesis.speak(u);
-    }catch(e){ /* ignore */ }
+    }catch(e){/* ignore */}
   }
-  function vibrate(pattern=[40]){ if(navigator.vibrate) navigator.vibrate(pattern); }
-  function shuffle(arr){ return arr.map(v=>[Math.random(),v]).sort((a,b)=>a[0]-b[0]).map(p=>p[1]); }
-  function sample(arr, n){ return shuffle([...arr]).slice(0,n); }
+  function vibrate(p=[40]){ if(navigator.vibrate) navigator.vibrate(p); }
 
-  function makeCard(animal, onTap){
-    const card = document.createElement('button');
-    card.className = 'card';
-    card.setAttribute('aria-label', `${animal.name}. Sound ${animal.sound}`);
-    card.innerHTML = `
-      <div class="emoji">${animal.emoji}</div>
-      <div class="name">${animal.name}</div>
-      <div class="sound">${animal.sound}</div>
-    `;
-    card.addEventListener('click', ()=> onTap && onTap(animal, card));
-    return card;
-  }
-
-  // --- Confetti (emoji burst) ---
+  // Confetti
   function confettiBurst(){
     const box = $('#confetti');
-    for(let i=0;i<24;i++){
-      const span = document.createElement('span');
-      span.textContent = (i%3===0?'🎉':(i%3===1?'⭐':'✨'));
-      const x = Math.random()*window.innerWidth;
-      const y = window.innerHeight - 40;
-      const dx = (Math.random()*2-1) * 140;
-      const dy = - (120 + Math.random()*120);
-      const rot = (Math.random()*2-1) * 540;
-      span.style.left = x+'px';
-      span.style.top  = y+'px';
-      span.style.setProperty('--x','0px');
-      span.style.setProperty('--y','0px');
-      span.style.setProperty('--x2', dx+'px');
-      span.style.setProperty('--y2', dy+'px');
-      span.style.setProperty('--r', rot+'deg');
-      box.appendChild(span);
-      setTimeout(()=> span.remove(), 1000);
+    for(let i=0;i<22;i++){
+      const s = document.createElement('span');
+      s.textContent = (i%3===0?'🎉':(i%3===1?'⭐':'✨'));
+      const dx = (Math.random()*2-1)*160;
+      const dy = - (120 + Math.random()*140);
+      const rot = (Math.random()*2-1)*540 + 'deg';
+      s.style.left = (Math.random()*window.innerWidth)+'px';
+      s.style.top  = (window.innerHeight-40)+'px';
+      s.style.setProperty('--x', dx+'px');
+      s.style.setProperty('--y', dy+'px');
+      s.style.setProperty('--r', rot);
+      box.appendChild(s);
+      setTimeout(()=> s.remove(), 1000);
     }
   }
 
-  // --- Guess Mode Logic ---
-  let correct = null;
+  // UI builders
+  function makeCard(item, onTap){
+    const btn = document.createElement('button');
+    btn.className = 'card';
+    btn.setAttribute('aria-label', item.name);
+    btn.innerHTML = `
+      <div class="emoji">${item.emoji}</div>
+      <div class="name">${item.name}</div>
+      <div class="hint">${item.en}</div>
+    `;
+    btn.addEventListener('click', ()=> onTap(item, btn));
+    return btn;
+  }
 
-  function renderGuessRound(){
+  function setTabs(){
+    // Mode
+    $('#tabFree').classList.toggle('active', mode==='free');
+    $('#tabMatch').classList.toggle('active', mode==='match');
+    // Categories
+    $('#catColors').classList.toggle('active',  cat==='colors');
+    $('#catAnimals').classList.toggle('active', cat==='animals');
+    $('#catFruits').classList.toggle('active',  cat==='fruits');
+    $('#catNumbers').classList.toggle('active', cat==='numbers');
+    $('#catShapes').classList.toggle('active',  cat==='shapes');
+  }
+
+  function renderFree(){
+    $('#prompt').textContent = 'ట్యాప్ చేస్తే పదం వినిపిస్తుంది';
+    $('#nextBtn').hidden = true;
     $('#status').textContent = '';
-    $$('#guessGrid .card').forEach(n=>n.remove());
+    const list = CATS[cat].list;
+    const grid = $('#grid'); grid.innerHTML = '';
+    list.forEach(item=>{
+      const card = makeCard(item, (it)=>{
+        speak(it.name, it.en);
+        vibrate([30]);
+      });
+      grid.appendChild(card);
+    });
+  }
 
-    const choices = sample(ANIMALS, 4);
-    correct = sample(choices,1)[0];
+  function renderMatch(){
+    $('#status').textContent = '';
+    $('#nextBtn').hidden = false;
+    const list = CATS[cat].list;
+    const choices = sample(list, Math.min(3, list.length));
+    currentTarget = sample(choices,1)[0];
 
-    $('#hint').textContent = correct.sound;
-    // Build cards
-    const grid = $('#guessGrid');
-    choices.forEach(an => {
-      const card = makeCard(an, (picked, el)=>{
-        if(picked.name === correct.name){
+    // Prompt (e.g., "ఏది ఎరుపు రంగు?" / "ఏది మూడు సంఖ్య?" / "ఏది వృత్తం ఆకారం?")
+    const ask = CATS[cat].ask.replace('…', currentTarget.name);
+    $('#prompt').textContent = ask;
+    speak(ask, `Which is ${currentTarget.en}?`);
+
+    // Grid
+    const grid = $('#grid'); grid.innerHTML = '';
+    choices.forEach(item=>{
+      const card = makeCard(item, (picked, el)=>{
+        if(picked.name === currentTarget.name){
           el.classList.add('good');
-          $('#status').textContent = `✅ Correct! It’s the ${picked.name}.`;
+          $('#status').textContent = '✅ బాగుంది!';
           $('#status').className = 'status good';
-          speak(`Yay! ${picked.sound} ${picked.sound} It is the ${picked.name}!`);
+          speak('చాలా బాగుంది!', 'Great job!');
           vibrate([40,60,80]);
           confettiBurst();
-          setTimeout(renderGuessRound, 1200);
+          setTimeout(renderMatch, 1200);
         }else{
           el.classList.add('bad');
-          $('#status').textContent = `❌ Try again!`;
+          $('#status').textContent = '❌ మళ్లీ ప్రయత్నించు';
           $('#status').className = 'status bad';
-          speak('Try again!');
+          speak('మళ్లీ ప్రయత్నించు', 'Try again');
           vibrate([60]);
           setTimeout(()=> el.classList.remove('bad'), 600);
         }
@@ -225,72 +270,50 @@
     });
   }
 
-  // --- Free Play ---
-  function renderFreePlay(){
-    const grid = $('#freeGrid');
-    grid.innerHTML = '';
-    ANIMALS.forEach(an=>{
-      const card = makeCard(an, (picked)=>{
-        speak(`${picked.sound} ${picked.sound} ${picked.name}`);
-        vibrate([30]);
-      });
-      grid.appendChild(card);
-    });
+  function render(){
+    setTabs();
+    if(mode==='free') renderFree(); else renderMatch();
   }
 
-  // --- Controls & Tabs ---
-  $('#playSound').addEventListener('click', ()=>{
-    if(!correct){ return; }
-    // Repeat the onomatopoeia a couple of times for clarity
-    speak(`${correct.sound} ${correct.sound}! Which animal says ${correct.sound}?`);
-    vibrate([20,40,20]);
-  });
+  // ====== Event wiring ======
+  $('#tabFree').addEventListener('click', ()=>{ mode='free'; render(); });
+  $('#tabMatch').addEventListener('click', ()=>{ mode='match'; render(); });
 
-  $('#nextRound').addEventListener('click', ()=>{
-    speechSynthesis.cancel();
-    renderGuessRound();
-  });
+  $('#catColors').addEventListener('click',  ()=>{ cat='colors';  render(); });
+  $('#catAnimals').addEventListener('click', ()=>{ cat='animals'; render(); });
+  $('#catFruits').addEventListener('click',  ()=>{ cat='fruits';  render(); });
+  $('#catNumbers').addEventListener('click', ()=>{ cat='numbers'; render(); });
+  $('#catShapes').addEventListener('click',  ()=>{ cat='shapes';  render(); });
 
-  const tabGuess = $('#tabGuess');
-  const tabFree  = $('#tabFree');
-  const guessMode = $('#guessMode');
-  const freeMode  = $('#freeMode');
-
-  function setTab(mode){
-    const isGuess = mode === 'guess';
-    tabGuess.classList.toggle('active', isGuess);
-    tabFree.classList.toggle('active', !isGuess);
-    tabGuess.setAttribute('aria-selected', isGuess);
-    tabFree.setAttribute('aria-selected', !isGuess);
-    guessMode.hidden = !isGuess;
-    freeMode.hidden = isGuess;
-    if(isGuess){
-      renderGuessRound();
-    }else{
-      renderFreePlay();
-      speak('Free play. Tap an animal to hear its sound.');
+  $('#repeatBtn').addEventListener('click', ()=>{
+    if(mode==='free'){
+      speak('తప్పకుండా!', 'Again');
+    }else if(currentTarget){
+      const ask = CATS[cat].ask.replace('…', currentTarget.name);
+      speak(ask, `Which is ${currentTarget.en}?`);
     }
-  }
-  tabGuess.addEventListener('click', ()=> setTab('guess'));
-  tabFree.addEventListener('click',  ()=> setTab('free'));
+  });
 
-  // Voice toggle
-  const voiceBtn = $('#voiceToggle');
-  voiceBtn.addEventListener('click', ()=>{
+  $('#nextBtn').addEventListener('click', ()=> renderMatch());
+
+  // Audio unlock + voice toggle
+  $('#startAudio').addEventListener('click', ()=>{
+    unlocked = true;
+    pickTeluguVoice();
+    speak('ప్రారంభిద్దాం!', 'Let us start!');
+  });
+  $('#voiceToggle').addEventListener('click', ()=>{
     voiceOn = !voiceOn;
-    voiceBtn.textContent = voiceOn ? '🔊 Voice: ON' : '🔇 Voice: OFF';
-    voiceBtn.setAttribute('aria-pressed', String(voiceOn));
-    if(voiceOn){ speak('Voice on'); }
-    else { speechSynthesis.cancel(); }
+    $('#voiceToggle').textContent = voiceOn ? '🔊 వాయిస్ ON' : '🔇 వాయిస్ OFF';
+    if(!voiceOn) speechSynthesis.cancel();
+    else speak('వాయిస్ ఆన్', 'Voice on');
   });
 
-  // First load
-  window.addEventListener('load', ()=>{
-    setTab('guess');
-    // Initial friendly prompt
-    setTimeout(()=> speak('Which animal says... Moo? Tap the right animal!'), 400);
-  });
+  // First paint
+  window.addEventListener('load', render);
 </script>
 </body>
 </html>
-``
+<html lang="te">
+<head>
+<meta charset="utf-8" />
